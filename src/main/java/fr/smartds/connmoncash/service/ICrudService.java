@@ -7,7 +7,6 @@ import fr.smartds.connmoncash.exceptions.FormValidationException;
 import java.util.List;
 
 public interface ICrudService<T, ID> {
-	List<T> getAll() throws DAOException;
 	void add(T entity) throws DAOException;
 //	void update(T entity) throws DAOException;
 	void delete(ID id) throws DAOException;

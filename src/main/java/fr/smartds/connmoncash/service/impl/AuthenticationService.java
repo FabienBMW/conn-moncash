@@ -1,27 +1,26 @@
 package fr.smartds.connmoncash.service.impl;
 
 
+import fr.smartds.connmoncash.dto.Credential;
 import fr.smartds.connmoncash.entities.Authentication;
 import fr.smartds.connmoncash.exceptions.DAOException;
 import fr.smartds.connmoncash.exceptions.FormValidationException;
+import fr.smartds.connmoncash.feignclients.MonCashFeignService;
 import fr.smartds.connmoncash.repositories.AuthenticationRepository;
 import fr.smartds.connmoncash.service.AuthenticationIService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 public class AuthenticationService implements AuthenticationIService {
     @Autowired
     private AuthenticationRepository repository;
 
-    @Override
-    public List<Authentication> getAll() throws DAOException {
-        return null;
-    }
+    @Autowired
+    private MonCashFeignService monCashFeignService;
+
 
     @Override
     public void add(Authentication entity) throws DAOException {
@@ -75,18 +74,51 @@ public class AuthenticationService implements AuthenticationIService {
         }
     }
 
+
     @Override
     public Authentication getOldToken() {
-        return null;
+
+        Authentication authentication;
+        try {
+            Optional<Authentication> auth = repository.findFirstByOrderByDateDesc();
+            if (auth.isPresent()) {
+                authentication = auth.get();
+            } else {
+                authentication = null;
+            }
+            return authentication;
+        }catch (DAOException e) {
+            throw new DAOException(e.getMessage());
+        }
     }
 
+    public Authentication authenticationOperation(){
+        Authentication response = new Authentication();
+        Credential credential = new Credential();
 
-//    @Override
-//    public Authentication getOldToken() {
-//        try {
-//            return repository.getOldToken();
-//        }catch (DAOException e) {
-//            throw new DAOException(e.getMessage());
-//        }
-//    }
+        try{
+            Authentication authentication = monCashFeignService.authentication(credential.getClient_id(), credential.getClient_secret());
+            authentication.setDate(new Date());
+            response = authentication;
+            add(authentication);
+        }catch (NullPointerException e) {
+            throw new NullPointerException(e.getMessage());
+        } catch (DAOException e) {
+            throw new DAOException(e.getMessage());
+        }
+        return response;
+    }
+
+    public  Boolean IsExpiredToken(Authentication authentication){
+        //date courrente
+        Calendar currentDate = Calendar.getInstance();
+        // date de creation du token
+        Calendar createToken = null;
+        createToken.setTime(authentication.getDate());
+        // on ajoute expires_in pour determiner la date d'expiration
+        createToken.add(Calendar.MINUTE,authentication.getExpires_in());
+        Calendar expiredDate = createToken;
+        // on compare expiresDate avec currenteDate
+        return currentDate.before(expiredDate);  // si currentDate se situe avant expiredDate renvoie true. il renvoie false dans e cas contraire
+    }
 }

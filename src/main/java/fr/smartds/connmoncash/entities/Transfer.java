@@ -17,11 +17,7 @@ public class Transfer extends Transaction implements Serializable {
     public static final long serializableUID = 1l;
 
     @Id
-    @Column(nullable = false, name = "ID")
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long Id;
-
-    @Column(nullable = false, name = "TRANSACTION_ID")
+    @Column(nullable = false, name = "ID_TRANSACTION")
     private String transaction_id;
 
     @Column(nullable = false, name = "AMOUNT")

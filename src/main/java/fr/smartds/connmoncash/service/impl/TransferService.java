@@ -1,14 +1,20 @@
 package fr.smartds.connmoncash.service.impl;
 
 
+import fr.smartds.connmoncash.dto.TransferDto;
+import fr.smartds.connmoncash.dto.TransferResponse;
+import fr.smartds.connmoncash.entities.Authentication;
 import fr.smartds.connmoncash.entities.Transfer;
 import fr.smartds.connmoncash.exceptions.DAOException;
 import fr.smartds.connmoncash.exceptions.FormValidationException;
+import fr.smartds.connmoncash.feignclients.MonCashFeignService;
 import fr.smartds.connmoncash.repositories.TransferRepository;
 import fr.smartds.connmoncash.service.TransferIService;
 import jakarta.persistence.NoResultException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.RequestBody;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,6 +25,12 @@ import java.util.Optional;
 public class TransferService implements TransferIService {
     @Autowired
     private TransferRepository repository;
+
+    @Autowired
+    private MonCashFeignService monCashFeignService;
+
+    @Autowired
+    private AuthenticationService authenticationService;
 
 
     @Override
@@ -84,5 +96,31 @@ public class TransferService implements TransferIService {
         }
     }
 
+
+    public Transfer transferOperation(TransferDto transferDto){
+        Transfer transfer = new Transfer();
+        Authentication authentication;
+
+        try{
+            Authentication auth = authenticationService.getOldToken();
+            if (authenticationService.IsExpiredToken(auth)){
+                authentication = auth;
+            }else {
+                authentication = authenticationService.authenticationOperation();
+            }
+            TransferResponse transferResponse = monCashFeignService.transfer(transferDto.getAmount(), transferDto.getReceiver(), transferDto.getDesc(), authentication.getAccess_token());
+            // on mettra un log a ce niveau pour verifier la valeur qu'on
+
+            if (transferResponse.getStatus().equals(HttpStatus.OK)){
+                transfer = transferResponse.getTransfer();
+                add(transfer);
+            }
+        }catch (NullPointerException e) {
+            throw new NullPointerException(e.getMessage());
+        }catch (DAOException e) {
+            throw new DAOException(e.getMessage());
+        }
+        return transfer;
+    }
 
 }

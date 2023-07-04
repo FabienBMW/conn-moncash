@@ -20,10 +20,6 @@ public class Authentication implements Serializable {
     public static final long serializableUID = 1l;
 
     @Id
-    @Column(nullable = false, name = "ID")
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long Id;
-
     @Column(nullable = false, name = "TOKEN")
     private String access_token;
 
@@ -33,8 +29,8 @@ public class Authentication implements Serializable {
     @Column(nullable = false, name = "EXPIRED_TOKEN")
     private int expires_in;
 
-    @Column(nullable = false, name = "CREATE_TOKEN_DATE")
-    private Date create_date;
+    @Column(nullable = false, name = "DATE")
+    private Date date;
 
     @Column(nullable = false, name = "SCOPE")
     private List<String> scope;
@@ -42,3 +38,4 @@ public class Authentication implements Serializable {
     @Column(nullable = false, name = "JTI")
     private String jti;
 }
+
